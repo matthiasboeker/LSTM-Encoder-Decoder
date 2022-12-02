@@ -16,7 +16,6 @@ from models.seq2seq import SEQ2SEQ
 from torch.utils.data import DataLoader
 from models.DataLoader import SequenceDataset
 
-#sys.path.append(str(Path.cwd().parent / "pmsys-pipeline"))
 from pmsys_pipeline.pipeline_structure import (
     PreprocessingModule,
     PipelinePmsys,
