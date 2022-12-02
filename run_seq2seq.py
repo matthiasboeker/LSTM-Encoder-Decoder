@@ -7,7 +7,6 @@ import torch.nn as nn
 import sys
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
@@ -17,11 +16,10 @@ from models.seq2seq import SEQ2SEQ
 from torch.utils.data import DataLoader
 from models.DataLoader import SequenceDataset
 
-sys.path.append(str(Path.cwd().parent / "pmsys-pipeline"))
+#sys.path.append(str(Path.cwd().parent / "pmsys-pipeline"))
 from pmsys_pipeline.pipeline_structure import (
     PreprocessingModule,
-    TSTrainTestSplittingModule,
-    Pipeline,
+    PipelinePmsys,
 )
 from pmsys_pipeline.preprocessing_module import strip_data
 
@@ -55,14 +53,14 @@ def concatenate_player(players: List[pd.DataFrame]):
 
 def init_pipelines(preprocessing):
     return {
-        "train": Pipeline.initialise([preprocessing]),
-        "val": Pipeline.initialise([preprocessing]),
-        "test": Pipeline.initialise([preprocessing]),
+        "train": PipelinePmsys.initialise([preprocessing]),
+        "val": PipelinePmsys.initialise([preprocessing]),
+        "test": PipelinePmsys.initialise([preprocessing]),
     }
 
 def run_pipeline(
-    pipeline: Dict[str, Pipeline],
-    data_obj: TSTrainTestSplittingModule,
+    pipeline: Dict[str, PipelinePmsys],
+    data_obj: TSTrainTest,
     params: Dict[str, Any],
     show_sizes: bool = False,
 ):
