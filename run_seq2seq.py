@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, List
 from pathlib import Path
 import pickle
 import torch
@@ -16,11 +16,10 @@ from models.seq2seq import SEQ2SEQ
 from torch.utils.data import DataLoader
 from models.DataLoader import SequenceDataset
 
-sys.path.append(str(Path.cwd().parent / "pmsys-pipeline"))
+#sys.path.append(str(Path.cwd().parent / "pmsys-pipeline"))
 from pmsys_pipeline.pipeline_structure import (
     PreprocessingModule,
-    TSTrainTestSplittingModule,
-    Pipeline,
+    PipelinePmsys,
 )
 from pmsys_pipeline.preprocessing_module import strip_data
 
@@ -40,22 +39,34 @@ def load_in(path_to_players):
     return players
 
 
+def concatenate_player(players: List[pd.DataFrame]):
+    player_dfs = []
+    for index, player in enumerate(players):
+        player_df = strip_data(player).reset_index(drop=True)
+        if index < len(players)-1:
+            encoding_mat = np.zeros(shape=(len(player_df), len(players)-1))
+            encoding_mat[:, index] = np.ones(len(player_df))
+            player_df = pd.concat([player_df, pd.DataFrame(encoding_mat)], axis=1).copy()
+        player_dfs.append(player_df)
+    return pd.concat(player_dfs, axis=0)
+
+
 def init_pipelines(preprocessing):
     return {
-        "train": Pipeline.initialise([preprocessing]),
-        "val": Pipeline.initialise([preprocessing]),
-        "test": Pipeline.initialise([preprocessing]),
+        "train": PipelinePmsys.initialise([preprocessing]),
+        "val": PipelinePmsys.initialise([preprocessing]),
+        "test": PipelinePmsys.initialise([preprocessing]),
     }
 
 def run_pipeline(
-    pipeline: Dict[str, Pipeline],
-    data_obj: TSTrainTestSplittingModule,
+    pipeline: Dict[str, PipelinePmsys],
+    data_obj: TSTrainTest,
     params: Dict[str, Any],
     show_sizes: bool = False,
 ):
-    y_train = np.array(player_ts.train_ts[params["features_out"]]).reshape(-1, 1)
-    y_val = np.array(player_ts.val_ts[params["features_out"]]).reshape(-1, 1)
-    y_test = np.array(player_ts.test_ts[params["features_out"]]).reshape(-1, 1)
+    y_train = np.array(data_obj.train_ts[params["features_out"]]).reshape(-1, 1)
+    y_val = np.array(data_obj.val_ts[params["features_out"]]).reshape(-1, 1)
+    y_test = np.array(data_obj.test_ts[params["features_out"]]).reshape(-1, 1)
     if show_sizes:
         print("Training", y_train.shape)
         print("Validation", y_val.shape)
@@ -76,7 +87,7 @@ def run_pipeline(
 
 
 data_params = {
-    "features_in": ["readiness", "index"],
+    "features_in": ["readiness"],
     "features_out": "acwr",
     "test_split": 0.2,
     "val_split": 0.5,
@@ -95,13 +106,14 @@ model_params = {
 }
 
 
-if __name__ == "__main__":
+def main():
     path_to_store_figures = Path(__file__).parent / "figures"
     players = load_in(Path(__file__).parent / "data" / "players.pkl")[:-6]
+    player = strip_data(players[0])
     players = pd.concat([strip_data(player).reset_index(drop=True).reset_index(drop=False) for player in players])
 
     player_ts = TSTrainTest.train_test_split_ts(
-        players, test_split=data_params["test_split"], val_split=data_params["val_split"]
+        player, test_split=data_params["test_split"], val_split=data_params["val_split"]
     )
 
     preprocessing = PreprocessingModule.init_module(
@@ -171,3 +183,7 @@ if __name__ == "__main__":
         plot_loss=path_to_store_figures / "loss.png",
     )
     model.evaluate(test_loader, path_to_store_figures / "eval.png", reversed_transformer=rvs)
+
+
+if __name__ == "__main__":
+    main()

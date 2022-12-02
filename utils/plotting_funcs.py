@@ -26,10 +26,3 @@ def plot_training_loss(training_loss: np.array, validation_loss: np.array, path_
     ax.legend()
     plt.tight_layout()
     plt.savefig(path_to_save_figures)
-
-
-def plot_feature_distributions(summary_module, selected_features: List[str]):
-    nr_features = len(selected_features)
-    fig, axs = plt.subplots(nrows=int(nr_features/2), ncols=2)
-    for ax in axs.ravel():
-        ax.plot()

@@ -18,5 +18,3 @@ class TSTrainTest:
         val_ts = time_series_df.iloc[train_len:train_len+val_len, :]
         test_ts = time_series_df.iloc[train_len+val_len:, :]
         return cls(train_ts, val_ts, test_ts, time_series_df.columns)
-
-
